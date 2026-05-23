@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MATRIXXX_TERMINAL</title>
+    <style>
+        :root {
+            --neon-primary: #00d4ff;
+            --matrix-col-default: #00d4ff;
+            --matrix-bright-default: #00ffff;
+        }
+
+        body {
+            --matrix-col: var(--matrix-col-default);
+            --matrix-bright: var(--matrix-bright-default);
+        }
+
+        body.matrix-shift {
+            --matrix-col: #ff007f;
+            --matrix-bright: #ff00ff;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #000;
+            font-family: 'Courier New', monospace;
+            overflow-x: hidden;
+            overflow-y: auto;
+            display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+        }
+
+        .matrix-rain {
+            position: fixed; inset: 0;
+            background: #000;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .matrix-wrapper {
+            position: absolute; top: 0; height: 100%; width: 15px;
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s;
+            will-change: transform;
+        }
+
+        .matrix-column {
+            position: absolute; top: 0; left: 0;
+            height: 100%; width: 100%;
+            font-size: 14px; line-height: 1;
+            color: var(--matrix-col);
+            text-shadow: 0 0 5px var(--matrix-col);
+            white-space: nowrap; overflow: hidden;
+            animation: matrix-fall linear infinite;
+            text-align: right;
+            transition: color 3s linear, text-shadow 3s linear;
+        }
+
+        .matrix-column span { display: block; }
+        .matrix-column .bright {
+            color: var(--matrix-bright);
+            text-shadow: 0 0 10px var(--matrix-bright);
+            transition: color 3s linear, text-shadow 3s linear;
+        }
+        
+        @keyframes matrix-fall {
+            from { transform: translateY(-100vh); }
+            to { transform: translateY(100vh); }
+        }
+
+        .crt-overlay {
+            position: fixed; inset: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
+            background-size: 100% 3px;
+            z-index: 10; pointer-events: none;
+        }
+
+        .main-ui {
+            position: relative; z-index: 20;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 80px 20px;
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 1400px;
+        }
+
+        .glass-box {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 60px 40px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(30px) saturate(200%);
+            -webkit-backdrop-filter: blur(30px) saturate(200%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.8), inset 0 0 20px rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #fff; font-size: 1.2rem; letter-spacing: 15px;
+            margin: 0 0 50px 15px; opacity: 0.9;
+            text-shadow: 0 0 15px var(--neon-primary);
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .video-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .video-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .grid-item {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+        }
+
+        .video-container {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .btn {
+            position: relative; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.5);
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem; padding: 15px 20px;
+            cursor: pointer; width: 100%;
+            box-sizing: border-box;
+            overflow: hidden; transition: color 0.3s, border-color 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .btn:hover { color: #fff; text-shadow: 0 0 10px var(--neon-primary); border-color: rgba(255, 255, 255, 0.3); }
+
+        .progress {
+            position: absolute; top: 0; left: 0; height: 100%; width: 0%;
+            z-index: -1; opacity: 0.7;
+            background: linear-gradient(90deg, #ff007f, #9400d3, #4b0082, #ff4500, #00ffcc);
+            background-size: 400% 100%;
+        }
+
+        .btn.holding .progress { 
+            width: 100%; 
+            transition: width 3s linear;
+            animation: mesmerize 3s linear infinite;
+        }
+
+        @keyframes mesmerize {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #reload-line {
+            position: fixed; top: 30px; left: 30px;
+            color: #0f0; font-size: 0.7rem; z-index: 30;
+            opacity: 0.6; cursor: pointer;
+            transition: color 3s linear;
+        }
+
+        body.matrix-shift #reload-line { color: #ff007f; }
+
+        .cursor { display: inline-block; width: 8px; height: 15px; background: currentColor; animation: blink 0.8s infinite; vertical-align: middle; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="matrix-rain" id="matrixRain"></div>
+    <div class="crt-overlay"></div>
+
+    <div id="reload-line" onclick="location.href='https://edit.the.matri.xxx'">
+        root@system:~# edit_the_matrix_ <span class="cursor"></span>
+    </div>
+
+    <div class="main-ui" id="mainUI">
+        <div class="glass-box">
+            <h1>SELECT ACCESS NODE</h1>
+            
+            <div class="video-grid">
+                <div class="grid-item">
+                    <div class="video-container">
+                        <video src="video_1.mp4" autoplay loop muted playsinline></video>
+                    </div>
+                    <button class="btn" data-url="https://test.ext/1">
+                        <span class="progress"></span>
+                        initialize terminal 01
+                    </button>
+                </div>
+
+                <div class="grid-item">
+                    <div class="video-container">
+                        <video src="video_2.mp4" autoplay loop muted playsinline></video>
+                    </div>
+                    <button class="btn" data-url="https://test.ext/2">
+                        <span class="progress"></span>
+                        initialize terminal 02
+                    </button>
+                </div>
+
+                <div class="grid-item">
+                    <div class="video-container">
+                        <video src="video_3.mp4" autoplay loop muted playsinline></video>
+                    </div>
+                    <button class="btn" data-url="https://test.ext/3">
+                        <span class="progress"></span>
+                        initialize terminal 03
+                    </button>
+                </div>
+
+                <div class="grid-item">
+                    <div class="video-container">
+                        <video src="video_4.mp4" autoplay loop muted playsinline></video>
+                    </div>
+                    <button class="btn" data-url="https://test.ext/4">
+                        <span class="progress"></span>
+                        initialize terminal 04
+                    </button>
+                </div>
+
+                <div class="grid-item">
+                    <div class="video-container">
+                        <video src="video_5.mp4" autoplay loop muted playsinline></video>
+                    </div>
+                    <button class="btn" data-url="https://test.ext/5">
+                        <span class="progress"></span>
+                        initialize terminal 05
+                    </button>
+                </div>
+
+                <div class="grid-item">
+                    <div class="video-container">
+                        <video src="video_6.mp4" autoplay loop muted playsinline></video>
+                    </div>
+                    <button class="btn" data-url="https://test.ext/6">
+                        <span class="progress"></span>
+                        initialize terminal 06
+                    </button>
+                </div>
+
+                <div class="grid-item">
+                    <div class="video-container">
+                        <video src="video_7.mp4" autoplay loop muted playsinline></video>
+                    </div>
+                    <button class="btn" data-url="https://test.ext/7">
+                        <span class="progress"></span>
+                        initialize terminal 07
+                    </button>
+                </div>
+
+                <div class="grid-item">
+                    <div class="video-container">
+                        <video src="video_8.mp4" autoplay loop muted playsinline></video>
+                    </div>
+                    <button class="btn" data-url="https://test.ext/8">
+                        <span class="progress"></span>
+                        initialize terminal 08
+                    </button>
+                </div>
+
+                <div class="grid-item">
+                    <div class="video-container">
+                        <video src="video_9.mp4" autoplay loop muted playsinline></video>
+                    </div>
+                    <button class="btn" data-url="https://test.ext/9">
+                        <span class="progress"></span>
+                        initialize terminal 09
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let colsData = [];
+        let mx = -1000, my = -1000;
+
+        window.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+        window.addEventListener('touchmove', e => { mx = e.touches[0].clientX; my = e.touches[0].clientY; }, {passive: true});
+        window.addEventListener('mouseleave', () => { mx = -1000; my = -1000; });
+        window.addEventListener('touchend', () => { mx = -1000; my = -1000; });
+
+        function createRain() {
+            const container = document.getElementById('matrixRain');
+            container.innerHTML = '';
+            colsData = [];
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$+-*/=%"#&().,;:[]^~_|{}\\?!@𝕏GROKアイウエオ';
+            const fontSize = 15;
+            const columns = Math.floor(window.innerWidth / fontSize);
+
+            for (let i = 0; i < columns; i++) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'matrix-wrapper';
+                wrapper.style.left = `${i * fontSize}px`;
+
+                const col = document.createElement('div');
+                col.className = 'matrix-column';
+                col.style.animationDuration = `${Math.random() * 5 + 5}s`;
+                col.style.animationDelay = `${Math.random() * 5}s`;
+                
+                let str = '';
+                for (let j = 0; j < 50; j++) {
+                    const char = chars[Math.floor(Math.random() * chars.length)];
+                    const isBright = Math.random() < 0.1 ? ' class="bright"' : '';
+                    str += `<span${isBright}>${char}</span>`;
+                }
+                
+                col.innerHTML = str;
+                wrapper.appendChild(col);
+                container.appendChild(wrapper);
+                colsData.push({ el: wrapper, x: i * fontSize });
+            }
+        }
+
+        function renderMagnetic() {
+            const radius = 200;
+            const maxPush = 120;
+
+            for (let i = 0; i < colsData.length; i++) {
+                const item = colsData[i];
+                const dx = mx - item.x;
+                const dist = Math.abs(dx);
+
+                if (dist < radius && mx > -1000) {
+                    const force = 1 - (dist / radius);
+                    const pushX = -Math.sign(dx) * (force * force) * maxPush;
+                    item.el.style.transform = `translate3d(${pushX}px, 0, 0) scale(${1 + force * 0.1})`;
+                    item.el.style.opacity = 1 - (force * 0.4);
+                } else {
+                    item.el.style.transform = 'translate3d(0, 0, 0) scale(1)';
+                    item.el.style.opacity = 1;
+                }
+            }
+            requestAnimationFrame(renderMagnetic);
+        }
+
+        document.querySelectorAll('.btn').forEach(btn => {
+            let timer;
+            let actionComplete = false;
+
+            const start = (e) => {
+                if (actionComplete) return;
+                e.preventDefault();
+                btn.classList.add('holding');
+                document.body.classList.add('matrix-shift');
+                
+                timer = setTimeout(() => {
+                    actionComplete = true;
+                    location.href = btn.dataset.url;
+                }, 3000);
+            };
+
+            const end = () => {
+                if (actionComplete) return;
+                btn.classList.remove('holding');
+                document.body.classList.remove('matrix-shift');
+                clearTimeout(timer);
+            };
+
+            btn.addEventListener('mousedown', start);
+            btn.addEventListener('touchstart', start, {passive: false});
+            btn.addEventListener('mouseup', end);
+            btn.addEventListener('mouseleave', end);
+            btn.addEventListener('touchend', end);
+        });
+
+        createRain();
+        renderMagnetic();
+        
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(createRain, 200);
+        });
+    </script>
+</body>
+</html>
